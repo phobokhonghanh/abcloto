@@ -1,6 +1,6 @@
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
 gTTS
-mutagen
 pydub
+yt-dlp

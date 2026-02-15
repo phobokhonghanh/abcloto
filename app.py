@@ -13,6 +13,24 @@ import subprocess
 import glob
 import re
 import time
+import sys
+import shutil
+
+def get_executable_path(name):
+    # Try finding in PATH
+    path = shutil.which(name)
+    if path:
+        return path
+    # Try finding in current venv/bin
+    venv_bin = os.path.dirname(sys.executable)
+    path = shutil.which(name, path=venv_bin)
+    if path:
+        return path
+    return name
+
+YTDLP_CMD = get_executable_path("yt-dlp")
+FFMPEG_CMD = get_executable_path("ffmpeg")
+
 
 app = FastAPI()
 
@@ -383,7 +401,7 @@ def _ensure_normalized(filename: str):
     
     # Convert to 192k CBR
     cmd = [
-        "ffmpeg", "-y",
+        FFMPEG_CMD, "-y",
         "-i", target_path,
         "-codec:a", "libmp3lame",
         "-b:a", "192k",
@@ -434,7 +452,7 @@ async def normalize_to_cbr(req: NormalizeRequest):
     
     tmp_path = target_path + ".tmp.mp3"
     cmd = [
-        "ffmpeg", "-y",
+        FFMPEG_CMD, "-y",
         "-i", target_path,
         "-codec:a", "libmp3lame",
         "-b:a", "192k",
@@ -474,7 +492,7 @@ def _do_download(task_id: str, url: str):
         download_status[task_id] = {"status": "downloading", "progress": "Checking duration...", "filename": "", "error": None}
         
         # 1. Get Duration
-        dur_cmd = ["yt-dlp", "--print", "duration", url]
+        dur_cmd = [YTDLP_CMD, "--print", "duration", url]
         print(f"Checking duration: {dur_cmd}")
         dur_proc = subprocess.run(dur_cmd, capture_output=True, text=True)
         
@@ -488,9 +506,9 @@ def _do_download(task_id: str, url: str):
         print(f"Duration: {duration}s")
         
         # 2. Calculate Ranges
-        # If > 45 mins (2700s), split into ~45 min chunks
-        # Actually 45 mins is good safety margin against timeouts
-        CHUNK_SIZE = 2700 
+        # If > 20 mins (1200s), split into ~20 min chunks
+        # Reducing from 45 to 20 mins for better reliability and smaller file sizes
+        CHUNK_SIZE = 1200 
         ranges = [] 
         
         if duration > CHUNK_SIZE:
@@ -529,7 +547,7 @@ def _do_download(task_id: str, url: str):
                 
                 # Command construction
                 cmd = [
-                    "yt-dlp",
+                    YTDLP_CMD,
                     "--extract-audio",
                     "--audio-format", "mp3",
                     "--audio-quality", "0",
@@ -546,7 +564,7 @@ def _do_download(task_id: str, url: str):
                 proc = subprocess.run(cmd, capture_output=True, text=True)
                 
                 if proc.returncode != 0:
-                    raise Exception(f"yt-dlp failed: {proc.stderr}")
+                    raise Exception(f"{YTDLP_CMD} failed: {proc.stderr}")
                     
                 # Find valid file
                 actual_file = None
@@ -573,7 +591,7 @@ def _do_download(task_id: str, url: str):
                 if cbr_path == output_path: cbr_path = output_path.replace(".mp3", "_temp_cbr.mp3")
                 
                 norm_cmd = [
-                    "ffmpeg", "-y",
+                    FFMPEG_CMD, "-y",
                     "-i", actual_file,
                     "-codec:a", "libmp3lame",
                     "-b:a", "192k",

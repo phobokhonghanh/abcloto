@@ -1,9 +1,11 @@
 # Sử dụng Python bản slim để dung lượng nhẹ nhưng vẫn đủ dùng
 FROM python:3.10-slim
 
-# Cài đặt FFmpeg (Bắt buộc để tính năng Song Cutter hoạt động)
+# Cài đặt FFmpeg và các công cụ hệ thống cần thiết
 RUN apt-get update && apt-get install -y \
     ffmpeg \
+    psmisc \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Thiết lập thư mục làm việc trong container
