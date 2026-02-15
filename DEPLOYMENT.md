@@ -13,7 +13,8 @@ Tài liệu này cung cấp hướng dẫn chi tiết về cách cài đặt, c�
 ## 2. Yêu Cầu Hệ Thống (Prerequisites)
 Để vận hành hệ thống, máy chủ hoặc máy tính cá nhân cần đáp ứng:
 *   **Hệ điều hành**: Linux (Ubuntu/Debian recommended), macOS, hoặc Windows.
-*   **Python**: Phiên bản 3.8 trở lên.
+*   **Python**: Phiên bản 3.8 trở lên (nếu chạy trực tiếp).
+*   **Docker**: Khuyến nghị để triển khai nhanh chóng (Koyeb, Railway, VPS).
 *   **Mạng**: Cần kết nối mạng nội bộ (LAN) hoặc Internet để các thiết bị khác truy cập.
 
 ## 3. Cài Đặt (Installation)
@@ -44,7 +45,7 @@ Sử dụng `pip` để cài đặt các gói cần thiết từ `requirements.t
 ```bash
 pip install -r requirements.txt
 ```
-*Các thư viện chính: `fastapi`, `uvicorn`, `pydantic`, `gTTS`, `mutagen`.*
+*Các thư viện chính: `fastapi`, `uvicorn`, `pydantic`, `gTTS`, `mutagen`, `pydub`.*
 
 ## 4. Vận Hành (Running the Application)
 
@@ -61,18 +62,31 @@ Nếu bạn muốn chạy trực tiếp hoặc cần debug:
 # Đảm bảo đã kích hoạt venv
 uvicorn app:app --host 0.0.0.0 --port 8000
 ```
-*   `--host 0.0.0.0`: Cho phép truy cập từ các thiết bị khác trong cùng mạng LAN.
-*   `--port 8000`: Cổng mặc định của ứng dụng (có thể thay đổi nếu bị trùng).
+
+### Cách 3: Sử dụng Docker (Khuyên dùng cho Server/Koyeb)
+Phương pháp này giúp cài đặt sẵn các phụ thuộc hệ thống như **FFmpeg** mà không cần cấu hình bằng tay.
+
+1.  **Build Image**:
+    ```bash
+    docker build -t abcloto-app .
+    ```
+
+2.  **Chạy Container**:
+    ```bash
+    docker run -d -p 8000:8000 --name loto-app abcloto-app
+    ```
 
 ## 5. Cấu Trúc Dự Án (Project Structure)
 ```
 abcloto/
 ├── app.py              # Mã nguồn chính (Server FastAPI)
+├── Dockerfile          # Cấu hình đóng gói Docker
 ├── requirements.txt    # Danh sách thư viện phụ thuộc
 ├── start.sh            # Script khởi chạy nhanh
 ├── static/             # Tài nguyên tĩnh (Frontend)
 │   ├── index.html      # Giao diện người chơi
 │   ├── admin.html      # Giao diện quản trị viên
+│   ├── cutter.html     # Công cụ cắt nhạc
 │   ├── style.css       # CSS chung
 │   └── js/             # Mã nguồn JavaScript
 ├── data/               # Dữ liệu âm thanh
@@ -96,9 +110,11 @@ Nếu không chạy được do cổng 8000 đang được sử dụng bởi ứ
     uvicorn app:app --host 0.0.0.0 --port 8080
     ```
 
-### Lỗi không cài được `gTTS` hoặc các thư viện khác
-*   Đảm bảo bạn đang sử dụng phiên bản **pip** mới nhất: `pip install --upgrade pip`
-*   Trên Linux, có thể cần cài thêm thư viện hệ thống cho xử lý âm thanh (tùy môi trường).
+### Lỗi "ModuleNotFoundError" trong Docker
+Đảm bảo bạn đã build lại image sau khi cập nhật `requirements.txt`:
+```bash
+docker build -t abcloto-app .
+```
 
 ---
 *Tài liệu được cập nhật lần cuối: 2026-02-15*
