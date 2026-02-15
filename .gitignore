@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.venv
+.env
+.venv
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+logs/
+
+# App Specific (Data/Media)
+# Exclude raw songs to keep repo light, but keep folder structure
+static/temp/*.mp3
+data/songs/full/*
+!data/songs/full/.gitkeep
+data/songs/number/*
+!data/songs/number/.gitkeep
+data/songs/background/*
+!data/songs/background/.gitkeep
+data/songs/start/*
+!data/songs/start/.gitkeep
+data/songs/end/*
+!data/songs/end/.gitkeep
+
+# Project specific
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.bak

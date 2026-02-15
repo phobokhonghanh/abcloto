@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loto Song Cutter Pro</title>
+    <script src="/static/tailwindcss.js?v=3"></script>
+    <script>
+        if (typeof tailwind === 'undefined') {
+            document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        jade: { 50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981', 600: '#059669', 700: '#047857' }
+                    },
+                    fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            accent-color: #10b981;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen p-4 md:p-6">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Song Cutter</h1>
+                <p class="text-xs text-slate-500">Công cụ cắt nhạc Loto</p>
+            </div>
+            <div class="flex gap-2 items-center bg-white p-2 rounded-lg shadow-sm border border-slate-200">
+                <select id="songSelect" onchange="loadSong()"
+                    class="bg-transparent text-sm font-medium outline-none text-slate-700 min-w-[200px]">
+                    <option value="">-- Chọn bài hát --</option>
+                </select>
+                <button onclick="init()" class="text-slate-400 hover:text-jade-600 px-2 text-sm"
+                    title="Refresh">↻</button>
+            </div>
+        </div>
+
+        <!-- Download Bar -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-500 uppercase flex-shrink-0">Tải nhạc</span>
+                <input type="text" id="downloadUrl" placeholder="Dán link YouTube / video URL..."
+                    class="flex-1 text-sm p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-jade-500 outline-none font-mono">
+                <button onclick="startDownload()" id="downloadBtn"
+                    class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg transition-colors flex-shrink-0">
+                    Tải MP3
+                </button>
+            </div>
+            <div id="downloadProgress" class="hidden mt-2">
+                <div class="flex items-center gap-2">
+                    <div class="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div id="downloadBar" class="h-2 bg-jade-500 rounded-full transition-all duration-500"
+                            style="width: 0%"></div>
+                    </div>
+                    <span id="downloadStatus"
+                        class="text-[10px] font-mono text-slate-500 flex-shrink-0 max-w-[200px] truncate">Đang
+                        chờ...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT: Player + Form -->
+            <div class="lg:col-span-5 space-y-5">
+
+                <!-- Player -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                    <audio id="audioPlayer" controls class="w-full mb-3 h-10"></audio>
+                    <div class="flex items-center justify-between gap-2 text-sm">
+                        <div class="font-mono font-bold text-jade-700 bg-jade-50 px-3 py-1 rounded">
+                            <span id="currentTime">0.00</span>s
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="seek(-5)"
+                                class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-medium text-xs">-5s</button>
+                            <select id="speedSelect" onchange="setSpeed(this.value)"
+                                class="bg-slate-100 border-none text-xs font-bold py-1 px-2 rounded">
+                                <option value="1">1.0x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2">2.0x</option>
+                                <option value="2.5">2.5x</option>
+                                <option value="3">3.0x</option>
+                                <option value="4">4.0x</option>
+                            </select>
+                            <button onclick="seek(5)"
+                                class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 font-medium text-xs">+5s</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unified Form -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                    <div class="flex items-center gap-3 mb-5 border-b border-slate-100 pb-4">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Loại Nhạc</label>
+                            <select id="cutTypeSelect" onchange="toggleType()"
+                                class="w-full text-sm font-bold p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-jade-500 outline-none">
+                                <option value="number" selected>Số (0-99)</option>
+                                <option value="start">Dạo đầu (Start)</option>
+                                <option value="end">Kinh (End)</option>
+                            </select>
+                        </div>
+                        <div class="flex-1" id="numberInputContainer">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Số Loto</label>
+                            <input type="number" id="lotoNumber" placeholder="Nhập số..."
+                                class="w-full text-2xl font-bold p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-jade-500 outline-none text-center">
+                        </div>
+                        <button onclick="loadNumberSegments()"
+                            class="mt-5 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-medium text-sm transition-colors">Kiểm
+                            tra</button>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-slate-800 mb-3 flex justify-between">
+                        <span id="formTitle">Tạo Segment Mới</span>
+                        <button id="cancelEditBtn" onclick="resetForm()"
+                            class="hidden text-xs text-red-500 hover:underline">Huỷ sửa</button>
+                    </h3>
+                    <input type="hidden" id="editIndex" value="-1">
+                    <input type="hidden" id="editType" value="">
+
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Start (ms)</label>
+                            <div class="flex">
+                                <input type="number" id="startTime"
+                                    class="w-full p-2 text-sm border border-slate-300 rounded-l-md focus:ring-1 focus:ring-jade-500 outline-none font-mono">
+                                <button onclick="setStart()"
+                                    class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 text-xs font-bold border-t border-b border-slate-300"
+                                    title="Đặt thời gian hiện tại">SET</button>
+                                <button onclick="seekPlayerTo(document.getElementById('startTime').value)"
+                                    class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 rounded-r-md text-xs font-bold border border-l-0 border-slate-300"
+                                    title="Nghe từ mốc này">➯</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">End (ms)</label>
+                            <div class="flex">
+                                <input type="number" id="endTime"
+                                    class="w-full p-2 text-sm border border-slate-300 rounded-l-md focus:ring-1 focus:ring-jade-500 outline-none font-mono">
+                                <button onclick="setEnd()"
+                                    class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 text-xs font-bold border-t border-b border-slate-300"
+                                    title="Đặt thời gian hiện tại">SET</button>
+                                <button onclick="seekPlayerTo(document.getElementById('endTime').value)"
+                                    class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 rounded-r-md text-xs font-bold border border-l-0 border-slate-300"
+                                    title="Nghe tới mốc này">➯</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <input type="text" id="lyricText" placeholder="Lời bài hát (tùy chọn)..."
+                            class="w-full p-2 text-sm border border-slate-300 rounded-md focus:ring-1 focus:ring-jade-500 outline-none">
+                    </div>
+                    <button id="addBtn" onclick="addOrUpdateSegment()"
+                        class="w-full bg-jade-600 hover:bg-jade-700 text-white font-bold py-3 rounded-lg shadow-sm transition-all text-sm">
+                        + Thêm Vào Danh Sách
+                    </button>
+                </div>
+            </div>
+
+            <!-- RIGHT: Lists -->
+            <div class="lg:col-span-7 space-y-5">
+
+                <!-- Pending -->
+                <div id="pendingBox"
+                    class="bg-white rounded-xl shadow-sm border border-orange-200 overflow-hidden hidden">
+                    <div class="bg-orange-50 px-4 py-2 border-b border-orange-100 flex justify-between items-center">
+                        <h4 class="font-bold text-orange-800 text-xs uppercase">Mới (Chưa lưu)</h4>
+                        <span id="pendingCount"
+                            class="text-[10px] font-bold bg-orange-200 text-orange-800 px-2 rounded-full">0</span>
+                    </div>
+                    <div id="pendingList" class="max-h-[250px] overflow-y-auto p-2 space-y-2"></div>
+                    <div class="p-2 bg-orange-50/50 border-t border-orange-100">
+                        <button id="saveBtn" onclick="saveAll()"
+                            class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded shadow-sm">
+                            Lưu Tất Cả
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Saved -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
+                        <h4 id="serverListHeader" class="font-bold text-slate-600 text-xs uppercase">Đã Lưu (Server)
+                        </h4>
+                        <div class="flex items-center gap-2">
+                            <button onclick="deleteAllSegments()"
+                                class="text-[10px] font-bold text-white bg-red-400 hover:bg-red-500 px-2 py-1 rounded transition-colors whitespace-nowrap">Xóa
+                                Tất Cả</button>
+                            <button onclick="cutAllUncut()"
+                                class="text-[10px] font-bold text-white bg-jade-500 hover:bg-jade-600 px-2 py-1 rounded transition-colors whitespace-nowrap">Cắt
+                                Tất Cả</button>
+                            <span id="savedCount"
+                                class="text-[10px] font-bold bg-slate-200 text-slate-600 px-2 rounded-full">0</span>
+                        </div>
+                    </div>
+                    <div id="statsRow"
+                        class="bg-white border-b border-slate-100 px-4 py-2 text-[10px] text-slate-500 flex flex-wrap gap-x-4 gap-y-1 font-mono hidden">
+                        <span>Start: <b id="statStart" class="text-slate-800">0</b></span>
+                        <span class="text-slate-300">|</span>
+                        <span>End: <b id="statEnd" class="text-slate-800">0</b></span>
+                        <span class="text-slate-300">|</span>
+                        <span title="Số lượng con số có ít nhất 1 bản ghi">Unique Số: <b id="statUnique"
+                                class="text-slate-800">0</b></span>
+                        <span class="text-slate-300">|</span>
+                        <span>Tổng Record: <b id="statTotal" class="text-jade-600">0</b></span>
+                    </div>
+                    <div id="savedList" class="max-h-[500px] overflow-y-auto p-2 space-y-2 min-h-[80px]">
+                        <div class="text-xs text-center text-slate-300 py-6">Đang tải...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="globalPreviewAudio" class="hidden"></audio>
+
+    <script>
+        const audioPlayer = document.getElementById('audioPlayer');
+        const songSelect = document.getElementById('songSelect');
+        const currentTimeSpan = document.getElementById('currentTime');
+        const globalPreviewAudio = document.getElementById('globalPreviewAudio');
+
+        let currentViewFilter = null; // null = show all
+
+        let pendingSegments = [];   // [{start, end, file, cut, lyric, number}, ...]
+        let allServerData = {};     // { "5": [...], "33": [...] }
+        let activePreviewId = null;
+        let previewInterval = null;
+
+        // --- Init ---
+        async function init() {
+            try {
+                const res = await fetch('/api/full_songs');
+                const files = await res.json();
+                const oldVal = songSelect.value;
+                songSelect.innerHTML = '<option value="">-- Chọn bài hát --</option>';
+                files.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f; opt.textContent = f;
+                    songSelect.appendChild(opt);
+                });
+                if (oldVal) songSelect.value = oldVal;
+            } catch (e) { console.error(e); }
+
+            // Load ALL saved segments on init
+            await loadAllSegments();
+        }
+        init();
+
+        function toggleType() {
+            const type = document.getElementById('cutTypeSelect').value;
+            const inputCont = document.getElementById('numberInputContainer');
+            if (type === 'number') {
+                inputCont.classList.remove('invisible');
+            } else {
+                inputCont.classList.add('invisible');
+            }
+            // Reset filter when switching type to avoid confusion?
+            // User requested explicit check button action, so let's maybe keep filter manual?
+            // Or better: auto-switch filter to new type if it wasn't a specific number?
+            // For now, let's keep it simple: "Check" applies filter. Switching type just toggles UI.
+        }
+
+        // --- Player ---
+        function loadSong() {
+            if (songSelect.value) audioPlayer.src = `/data/songs/full/${songSelect.value}`;
+        }
+        // --- Time Helpers ---
+        function msToTime(ms) {
+            const totalSec = ms / 1000;
+            const m = Math.floor(totalSec / 60);
+            const s = (totalSec % 60).toFixed(1);
+            return `${m}:${s.padStart(4, '0')}`;
+        }
+        function secToTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = (sec % 60).toFixed(1);
+            return `${m}:${s.padStart(4, '0')}`;
+        }
+
+        audioPlayer.addEventListener('timeupdate', () => {
+            currentTimeSpan.textContent = secToTime(audioPlayer.currentTime);
+        });
+        function seek(s) { audioPlayer.currentTime += s; }
+        function setSpeed(r) { audioPlayer.playbackRate = parseFloat(r); }
+        function setStart() { document.getElementById('startTime').value = Math.floor(audioPlayer.currentTime * 1000); }
+        function setEnd() { document.getElementById('endTime').value = Math.floor(audioPlayer.currentTime * 1000); }
+        function seekPlayerTo(ms) { audioPlayer.currentTime = ms / 1000; audioPlayer.play(); }
+
+        // --- Data Loading ---
+        async function loadAllSegments() {
+            try {
+                const res = await fetch('/api/cutter/all');
+                allServerData = await res.json();
+                renderLists();
+            } catch (e) { console.error("Error loading all segments:", e); }
+        }
+
+        async function loadNumberSegments() {
+            const type = document.getElementById('cutTypeSelect').value;
+            let targetNum = type;
+
+            if (type === 'number') {
+                targetNum = document.getElementById('lotoNumber').value;
+                if (!targetNum) { alert("Nhập số loto!"); return; }
+            }
+
+            // Reload all data (to get fresh state)
+            await loadAllSegments();
+
+            // Set Filter & Update UI
+            currentViewFilter = targetNum;
+            renderLists();
+
+            // Count and notify
+            const count = (allServerData[targetNum] || []).length;
+            const label = type === 'number' ? `Số ${targetNum}` : (type === 'start' ? 'Dạo đầu' : 'Kinh');
+            // Alert removed as requested implicitly by wanting to see the list instead
+            // alert(`${label} hiện đang có ${count} segment.`);
+        }
+
+        // --- Flatten server data for display ---
+        function getServerSegmentsFlat() {
+            // Returns [{...seg, _number, _index}, ...] for all numbers
+            const flat = [];
+            for (const [num, segs] of Object.entries(allServerData)) {
+                segs.forEach((seg, idx) => {
+                    flat.push({ ...seg, _number: num, _index: idx });
+                });
+            }
+            // Sort: Start -> End -> Number
+            flat.sort((a, b) => {
+                if (a._number === 'start') return -1;
+                if (b._number === 'start') return 1;
+                if (a._number === 'end') return -1;
+                if (b._number === 'end') return 1;
+                // Both numbers
+                if (!isNaN(a._number) && isNaN(b._number)) return 1;
+                if (isNaN(a._number) && !isNaN(b._number)) return -1;
+                return parseInt(a._number) - parseInt(b._number);
+            });
+            return flat;
+        }
+
+        function renderLists() {
+            renderPendingList();
+            renderServerList();
+        }
+
+        function renderPendingList() {
+            const el = document.getElementById('pendingList');
+            const pendingBox = document.getElementById('pendingBox');
+            const saveBtn = document.getElementById('saveBtn');
+
+            document.getElementById('pendingCount').textContent = pendingSegments.length;
+
+            if (pendingSegments.length === 0) {
+                pendingBox.classList.add('hidden');
+                return;
+            }
+            pendingBox.classList.remove('hidden');
+
+            // Group pending by number for save button
+            const nums = [...new Set(pendingSegments.map(s => s.number).filter(Boolean))];
+            if (nums.length > 0) {
+                saveBtn.textContent = `Lưu ${pendingSegments.length} Segment (Số: ${nums.join(', ')})`;
+                saveBtn.disabled = false;
+                saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                saveBtn.textContent = "Nhập số loto trước khi lưu";
+                saveBtn.disabled = true;
+                saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            el.innerHTML = '';
+            pendingSegments.forEach((seg, index) => {
+                el.appendChild(createSegmentCard(seg, index, 'pending', seg.number || '?'));
+            });
+        }
+
+        function clearFilter() {
+            currentViewFilter = null;
+            renderLists();
+        }
+
+        function renderServerList() {
+            const el = document.getElementById('savedList');
+            let flat = getServerSegmentsFlat();
+
+            // --- Stats Calculation ---
+            let countStart = 0, countEnd = 0, countUniqueNums = 0;
+            const countTotal = flat.length;
+
+            for (const [key, segs] of Object.entries(allServerData)) {
+                if (!segs || segs.length === 0) continue;
+                if (key === 'start') countStart = segs.length;
+                else if (key === 'end') countEnd = segs.length;
+                else countUniqueNums++;
+            }
+
+            const statsRow = document.getElementById('statsRow');
+            if (statsRow) {
+                statsRow.classList.remove('hidden');
+                document.getElementById('statStart').textContent = countStart;
+                document.getElementById('statEnd').textContent = countEnd;
+                document.getElementById('statUnique').textContent = countUniqueNums;
+                document.getElementById('statTotal').textContent = countTotal;
+            }
+            // -------------------------
+
+            // Apply filter
+            const headerTitle = document.getElementById('serverListHeader');
+            if (currentViewFilter) {
+                flat = flat.filter(s => s._number == currentViewFilter);
+                headerTitle.innerHTML = `ĐANG LỌC: <span class="text-jade-600 font-bold">${currentViewFilter}</span> (${flat.length}) <button onclick="clearFilter()" class="ml-2 text-blue-500 hover:underline normal-case font-normal cursor-pointer text-[10px]">(Hiện tất cả)</button>`;
+            } else {
+                headerTitle.textContent = 'ĐÃ LƯU (SERVER)';
+            }
+
+            document.getElementById('savedCount').textContent = flat.length;
+
+            if (flat.length === 0) {
+                el.innerHTML = '<div class="text-xs text-center text-slate-300 py-4 italic">Trống</div>';
+                return;
+            }
+            el.innerHTML = '';
+
+            // Group by number for visual grouping
+            let lastNum = null;
+            flat.forEach((seg) => {
+                // If filtering, we might not need the header every time if it's just one number, 
+                // but keeping it consistent is fine.
+                if (seg._number !== lastNum) {
+                    const header = document.createElement('div');
+                    header.className = 'text-[10px] font-bold text-slate-400 uppercase px-1 pt-2 pb-1 border-b border-slate-100';
+                    header.textContent = `Số ${seg._number}`;
+                    el.appendChild(header);
+                    lastNum = seg._number;
+                }
+                el.appendChild(createSegmentCard(seg, seg._index, 'server', seg._number));
+            });
+        }
+
+        function createSegmentCard(seg, index, type, number) {
+            const isCut = seg.cut === 1;
+            const div = document.createElement('div');
+            div.className = 'group p-3 bg-white border border-slate-100 hover:border-jade-300 rounded transition-all shadow-sm flex flex-col gap-1';
+
+            const statusBadge = isCut
+                ? '<span class="px-1.5 py-0.5 bg-jade-100 text-jade-700 text-[10px] font-bold rounded">CUT</span>'
+                : (type === 'server'
+                    ? '<span class="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold rounded">SAVED</span>'
+                    : '<span class="px-1.5 py-0.5 bg-orange-100 text-orange-600 text-[10px] font-bold rounded">NEW</span>');
+
+            // For server segments, use _number; for pending, use .number
+            const numForPreview = type === 'server' ? seg._number : number;
+
+            div.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-2 overflow-hidden flex-1">
+                        <span class="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-slate-800 text-white text-[10px] font-bold rounded-full">${number}</span>
+                        <div class="text-xs font-bold text-slate-700 truncate" title="${seg.file}">${seg.file}</div>
+                    </div>
+                    ${statusBadge}
+                </div>
+                <div class="text-[10px] text-slate-500 font-mono flex items-center justify-between">
+                    <div class="flex items-center gap-1">
+                        <button onclick="seekPlayerTo(${seg.start})" class="hover:text-jade-600 hover:underline cursor-pointer" title="Đi đến Start">${msToTime(seg.start)}</button>
+                        <span>→</span>
+                        <button onclick="seekPlayerTo(${seg.end})" class="hover:text-jade-600 hover:underline cursor-pointer" title="Đi đến End">${msToTime(seg.end)}</button>
+                    </div>
+                    <span>${((seg.end - seg.start) / 1000).toFixed(1)}s</span>
+                </div>
+                ${seg.lyric ? `<div class="text-[10px] text-slate-400 italic truncate border-l-2 border-slate-200 pl-2">"${seg.lyric}"</div>` : ''}
+
+                <div class="flex gap-2 border-t border-slate-50 pt-2 mt-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <button onclick="togglePreview('${type}', ${index}, '${numForPreview}', this)" class="text-[10px] font-bold text-slate-600 hover:text-jade-600 px-3 py-1 bg-slate-100 hover:bg-jade-50 rounded flex items-center gap-1">
+                        <span>▶</span> Nghe
+                    </button>
+                    <button onclick="editSegment('${type}', ${index}, '${numForPreview}')" class="text-[10px] font-bold text-blue-500 hover:text-blue-700 px-3 py-1 bg-slate-50 hover:bg-blue-50 rounded">Sửa</button>
+                    ${type === 'server' && !isCut ? `<button onclick="cutAudio('${numForPreview}', ${index})" class="text-[10px] font-bold text-white hover:bg-jade-700 bg-jade-500 px-3 py-1 rounded">Cắt</button>` : ''}
+                    <button onclick="removeSegment('${type}', ${index}, '${numForPreview}')" class="ml-auto text-[10px] font-bold text-red-300 hover:text-red-500 px-2">Xóa</button>
+                </div>
+
+                <div id="preview-${type}-${number}-${index}" class="hidden mt-1 bg-slate-50 p-2 rounded border border-slate-200"></div>
+            `;
+            return div;
+        }
+
+        // --- Preview (Inline, Range-Constrained) ---
+        function stopPreview() {
+            globalPreviewAudio.pause();
+            if (activePreviewId) {
+                const el = document.getElementById(activePreviewId);
+                if (el) { el.innerHTML = ''; el.classList.add('hidden'); }
+                activePreviewId = null;
+            }
+            if (previewInterval) { clearInterval(previewInterval); previewInterval = null; }
+        }
+
+        function togglePreview(type, index, number, btn) {
+            const containerId = `preview-${type}-${number}-${index}`;
+            const container = document.getElementById(containerId);
+            const seg = type === 'pending' ? pendingSegments[index] : (allServerData[number] || [])[index];
+            if (!seg) return;
+
+            // Toggle off
+            if (activePreviewId === containerId && !globalPreviewAudio.paused) {
+                stopPreview();
+                btn.querySelector('span').textContent = '▶';
+                return;
+            }
+            stopPreview();
+            activePreviewId = containerId;
+            container.classList.remove('hidden');
+            btn.querySelector('span').textContent = '⏸';
+
+            const isCut = seg.cut === 1;
+            const startSec = seg.start / 1000;
+            const endSec = seg.end / 1000;
+            const duration = endSec - startSec;
+
+            let cutPath = '';
+            // If segment has an ID, use it for the file name
+            if (isCut) {
+                // Priority: Use ID if available, otherwise fallback to Index (legacy)
+                const filename = seg.id ? `${seg.id}.mp3` : `${index}.mp3`;
+
+                if (number === 'start' || number === 'end') {
+                    cutPath = `/data/songs/${number}/${filename}`;
+                } else {
+                    cutPath = `/data/songs/number/${number}/${filename}`;
+                }
+            }
+
+            const fileInfo = isCut
+                ? `<div class="text-[9px] text-jade-600 font-mono mb-1 truncate">File: ${cutPath}</div>`
+                : `<div class="text-[9px] text-orange-600 font-mono mb-1 truncate">Preview: ${seg.file} (${seg.start}→${seg.end}ms | ${duration.toFixed(1)}s)</div>`;
+
+            container.innerHTML = `
+                ${fileInfo}
+                <div class="flex items-center gap-2">
+                    <span id="inlineTimeA-${type}-${number}-${index}" class="text-[10px] font-mono text-slate-400 w-10">0.0s</span>
+                    <input type="range" id="inlineSeek-${type}-${number}-${index}" min="0" max="${duration.toFixed(2)}" value="0" step="0.01" class="flex-1 h-1.5 bg-slate-300 rounded-lg appearance-none cursor-pointer">
+                    <span class="text-[10px] font-mono text-slate-400 w-10 text-right">${duration.toFixed(1)}s</span>
+                </div>
+            `;
+
+            // Setup source
+            if (isCut) {
+                globalPreviewAudio.src = cutPath;
+                globalPreviewAudio.currentTime = 0;
+            } else {
+                globalPreviewAudio.src = `/data/songs/full/${seg.file}`;
+                globalPreviewAudio.currentTime = startSec;
+            }
+            globalPreviewAudio.play();
+
+            const seekInput = document.getElementById(`inlineSeek-${type}-${number}-${index}`);
+            const timeA = document.getElementById(`inlineTimeA-${type}-${number}-${index}`);
+            let isSeeking = false;
+
+            seekInput.onmousedown = () => { isSeeking = true; };
+            seekInput.ontouchstart = () => { isSeeking = true; };
+            seekInput.onmouseup = () => { isSeeking = false; };
+            seekInput.ontouchend = () => { isSeeking = false; };
+
+            seekInput.oninput = (e) => {
+                const relPos = parseFloat(e.target.value);
+                if (isCut) {
+                    globalPreviewAudio.currentTime = relPos;
+                } else {
+                    globalPreviewAudio.currentTime = startSec + relPos;
+                }
+                timeA.textContent = relPos.toFixed(1) + 's';
+            };
+
+            previewInterval = setInterval(() => {
+                if (!globalPreviewAudio.paused) {
+                    let relTime;
+                    if (isCut) {
+                        relTime = globalPreviewAudio.currentTime;
+                    } else {
+                        relTime = globalPreviewAudio.currentTime - startSec;
+                    }
+                    if (relTime < 0) relTime = 0;
+
+                    if (!isSeeking) seekInput.value = relTime;
+                    timeA.textContent = relTime.toFixed(1) + 's';
+
+                    // Stop at end of range
+                    if (!isCut && globalPreviewAudio.currentTime >= endSec) {
+                        globalPreviewAudio.pause();
+                        globalPreviewAudio.currentTime = startSec;
+                        if (!isSeeking) seekInput.value = 0;
+                        timeA.textContent = '0.0s';
+                        btn.querySelector('span').textContent = '▶';
+                    }
+                    if (isCut && globalPreviewAudio.currentTime >= globalPreviewAudio.duration) {
+                        btn.querySelector('span').textContent = '▶';
+                    }
+                } else {
+                    btn.querySelector('span').textContent = '▶';
+                }
+            }, 80);
+
+            if (isCut) {
+                globalPreviewAudio.onloadedmetadata = () => {
+                    seekInput.max = globalPreviewAudio.duration.toFixed(2);
+                };
+            }
+        }
+
+        // --- Add / Edit ---
+        function addOrUpdateSegment() {
+            if (!songSelect.value) { alert("Chưa chọn bài hát!"); return; }
+
+            // Determine target "number" (could be 'start' or 'end')
+            const type = document.getElementById('cutTypeSelect').value;
+            let targetNum;
+
+            if (type === 'number') {
+                targetNum = document.getElementById('lotoNumber').value;
+                if (!targetNum) { alert("Nhập số loto!"); return; }
+            } else {
+                targetNum = type;
+            }
+
+            // Start/End validation
+            const start = parseInt(document.getElementById('startTime').value);
+            const end = parseInt(document.getElementById('endTime').value);
+            const lyric = document.getElementById('lyricText').value;
+            if (isNaN(start) || isNaN(end) || start >= end) { alert("Thời gian lỗi! (Start < End)"); return; }
+
+            const editIdx = parseInt(document.getElementById('editIndex').value);
+            const editType = document.getElementById('editType').value;
+
+            // Generate ID for new segment or preserve existing
+            let segId = crypto.randomUUID().slice(0, 8); // Short UUID
+
+            // If editing, try to preserve the ID of the segment being edited
+            if (editIdx >= 0 && editType) {
+                const oldSeg = editType === 'pending'
+                    ? pendingSegments[editIdx]
+                    : (allServerData[document.getElementById('editType').dataset.number] || [])[editIdx];
+                if (oldSeg && oldSeg.id) segId = oldSeg.id;
+            }
+
+            const newSeg = { id: segId, start, end, file: songSelect.value, cut: 0, lyric, number: targetNum };
+
+            if (editIdx >= 0 && editType) {
+                if (editType === 'pending') {
+                    pendingSegments[editIdx] = newSeg;
+                } else {
+                    // Editing a server segment: update local and mark as pending change
+                    const editNum = document.getElementById('editType').dataset.number || targetNum;
+                    if (allServerData[editNum] && allServerData[editNum][editIdx]) {
+                        allServerData[editNum][editIdx] = { ...newSeg, cut: 0 };
+                        delete allServerData[editNum][editIdx]._number;
+                        delete allServerData[editNum][editIdx]._index;
+                    }
+                }
+                resetForm();
+            } else {
+                pendingSegments.push(newSeg);
+            }
+            renderLists();
+        }
+
+        function editSegment(type, index, number) {
+            const seg = type === 'pending' ? pendingSegments[index] : (allServerData[number] || [])[index];
+            if (!seg) return;
+
+            // Set Type UI
+            if (number === 'start') {
+                document.getElementById('cutTypeSelect').value = 'start';
+                toggleType();
+            } else if (number === 'end') {
+                document.getElementById('cutTypeSelect').value = 'end';
+                toggleType();
+            } else {
+                document.getElementById('cutTypeSelect').value = 'number';
+                toggleType();
+                document.getElementById('lotoNumber').value = number;
+            }
+            document.getElementById('startTime').value = seg.start;
+            document.getElementById('endTime').value = seg.end;
+            document.getElementById('lyricText').value = seg.lyric || '';
+
+            // Load song and seek to start position
+            if (seg.file !== songSelect.value) {
+                songSelect.value = seg.file;
+                loadSong();
+                // Wait for audio to load before seeking
+                audioPlayer.addEventListener('loadedmetadata', function onLoad() {
+                    audioPlayer.currentTime = seg.start / 1000;
+                    audioPlayer.removeEventListener('loadedmetadata', onLoad);
+                });
+            } else {
+                // Same song, just seek
+                audioPlayer.currentTime = seg.start / 1000;
+            }
+
+            document.getElementById('formTitle').textContent = `Sửa #${index + 1} (Số ${number}) — ${msToTime(seg.start)} → ${msToTime(seg.end)}`;
+            document.getElementById('addBtn').textContent = "Lưu Sửa Đổi";
+            document.getElementById('addBtn').className = "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-sm transition-all text-sm";
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            document.getElementById('editIndex').value = index;
+            document.getElementById('editType').value = type;
+            document.getElementById('editType').dataset.number = number;
+        }
+
+        function resetForm() {
+            document.getElementById('formTitle').textContent = "Tạo Segment Mới";
+            document.getElementById('addBtn').textContent = "+ Thêm Vào Danh Sách";
+            document.getElementById('addBtn').className = "w-full bg-jade-600 hover:bg-jade-700 text-white font-bold py-3 rounded-lg shadow-sm transition-all text-sm";
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('editType').value = "";
+            document.getElementById('startTime').value = '';
+            document.getElementById('endTime').value = '';
+            document.getElementById('lyricText').value = '';
+        }
+
+        function removeSegment(type, index, number) {
+            if (!confirm("Xóa?")) return;
+            if (type === 'pending') {
+                pendingSegments.splice(index, 1);
+            } else {
+                if (allServerData[number]) {
+                    allServerData[number].splice(index, 1);
+                    // Also need to save this to server
+                    saveNumberToServer(number, allServerData[number]);
+                }
+            }
+            renderLists();
+        }
+
+        async function saveNumberToServer(number, segments) {
+            try {
+                await fetch('/api/cutter/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number: String(number), segments })
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function saveAll() {
+            // Group pending by number
+            const byNum = {};
+            const noNum = [];
+            pendingSegments.forEach(seg => {
+                if (seg.number) {
+                    if (!byNum[seg.number]) byNum[seg.number] = [];
+                    // Preserve ID or generate new if missing
+                    const id = seg.id || crypto.randomUUID().slice(0, 8);
+                    byNum[seg.number].push({ id, start: seg.start, end: seg.end, file: seg.file, cut: 0, lyric: seg.lyric || '' });
+                } else {
+                    noNum.push(seg);
+                }
+            });
+
+            if (noNum.length > 0) {
+                alert(`${noNum.length} segment chưa có số loto! Hãy sửa lại.`);
+                return;
+            }
+
+            try {
+                for (const [num, segs] of Object.entries(byNum)) {
+                    const existing = allServerData[num] || [];
+                    const merged = [...existing, ...segs];
+                    await fetch('/api/cutter/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ number: String(num), segments: merged })
+                    });
+                }
+                pendingSegments = [];
+                await loadAllSegments();
+                resetForm();
+                alert("Đã lưu!");
+            } catch (e) { alert("Lỗi!"); }
+        }
+
+        async function cutAudio(number, index) {
+            showToast(`Đang cắt Số ${number} #${index + 1}...`, 'loading');
+            try {
+                // Pass ID if available, otherwise index (for legacy, though backend should be updated to prefer ID)
+                const seg = allServerData[number][index];
+                const id = seg.id;
+
+                const payload = { number: String(number), index };
+                if (id) payload.id = id;
+
+                const res = await fetch('/api/cutter/cut', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    if (allServerData[number] && allServerData[number][index]) {
+                        allServerData[number][index].cut = 1;
+                    }
+                    renderLists();
+                    showToast(`Số ${number} #${index + 1} — Cắt xong!`, 'success');
+                } else {
+                    const errData = await res.json().catch(() => ({ detail: res.statusText }));
+                    showToast(`Lỗi cắt Số ${number} #${index + 1}: ${errData.detail || res.status}`, 'error');
+                }
+            } catch (e) {
+                showToast(`Lỗi mạng khi cắt Số ${number} #${index + 1}: ${e.message}`, 'error');
+            }
+        }
+
+        // --- Cut All Uncut ---
+        async function cutAllUncut(force = false) {
+            const items = [];
+            for (const [num, segs] of Object.entries(allServerData)) {
+                segs.forEach((seg, idx) => {
+                    if (force || seg.cut === 0) {
+                        const payload = { number: num, index: idx };
+                        if (seg.id) payload.id = seg.id;
+                        items.push(payload);
+                    }
+                });
+            }
+            if (items.length === 0) {
+                showToast('Không có segment nào cần cắt.', 'success');
+                return;
+            }
+
+            showToast(`Đang cắt 0/${items.length}...`, 'loading');
+            let done = 0;
+            let errors = 0;
+
+            const errorDetails = [];
+            for (const item of items) {
+                try {
+                    const res = await fetch('/api/cutter/cut', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(item)
+                    });
+                    if (res.ok) {
+                        if (allServerData[item.number] && allServerData[item.number][item.index]) {
+                            allServerData[item.number][item.index].cut = 1;
+                        }
+                        done++;
+                    } else {
+                        const errData = await res.json().catch(() => ({ detail: res.statusText }));
+                        const msg = `Số ${item.number}#${item.index + 1}: ${errData.detail || res.status}`;
+                        errorDetails.push(msg);
+                        errors++;
+                        done++;
+                    }
+                } catch (e) {
+                    errorDetails.push(`Số ${item.number}#${item.index + 1}: ${e.message}`);
+                    errors++;
+                    done++;
+                }
+
+                updateToast(`Đang cắt ${done}/${items.length}...`, done / items.length);
+            }
+
+            renderLists();
+            if (errors === 0) {
+                showToast(`Hoàn tất! Đã cắt ${items.length} segment.`, 'success');
+            } else {
+                showToast(`Lỗi ${errors}/${items.length}: ${errorDetails.join(' | ')}`, 'error');
+            }
+        }
+
+        async function deleteAllSegments() {
+            if (!confirm("Bạn có chắc chắn muốn XÓA TẤT CẢ các segment đã lưu không? Hành động này không thể hoàn tác.")) return;
+
+            showToast("Đang xóa tất cả...", "loading");
+            try {
+                const res = await fetch('/api/cutter/all', { method: 'DELETE' });
+                if (res.ok) {
+                    allServerData = {};
+                    renderLists();
+                    showToast("Đã xóa sạch dữ liệu!", "success");
+                } else {
+                    showToast("Lỗi khi xóa dữ liệu server.", "error");
+                }
+            } catch (e) {
+                showToast("Lỗi kết nối server.", "error");
+            }
+        }
+
+        // --- Toast System ---
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastBar = document.getElementById('toastBar');
+
+            toastMsg.textContent = msg;
+            toast.classList.remove('hidden');
+
+            // Reset
+            toastBar.style.width = '0%';
+            toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg border text-sm font-medium min-w-[320px] max-w-[500px] transition-all';
+
+            if (type === 'loading') {
+                toast.classList.add('bg-slate-800', 'text-white', 'border-slate-700');
+                toastBar.className = 'h-1 bg-jade-400 rounded transition-all duration-300';
+                // Indeterminate animation
+                toastBar.style.width = '30%';
+                toastBar.style.animation = 'pulse 1.5s ease-in-out infinite';
+            } else if (type === 'success') {
+                toast.classList.add('bg-jade-600', 'text-white', 'border-jade-500');
+                toastBar.className = 'h-1 bg-white/30 rounded';
+                toastBar.style.width = '100%';
+                toastBar.style.animation = 'none';
+                setTimeout(() => toast.classList.add('hidden'), 3000);
+            } else if (type === 'error') {
+                toast.classList.add('bg-red-600', 'text-white', 'border-red-500');
+                toastBar.className = 'h-1 bg-white/30 rounded';
+                toastBar.style.width = '100%';
+                toastBar.style.animation = 'none';
+                setTimeout(() => toast.classList.add('hidden'), 4000);
+            }
+        }
+
+        function updateToast(msg, progress) {
+            const toastMsg = document.getElementById('toastMsg');
+            const toastBar = document.getElementById('toastBar');
+            toastMsg.textContent = msg;
+            toastBar.style.animation = 'none';
+            toastBar.style.width = (progress * 100).toFixed(0) + '%';
+        }
+
+        // --- Video Download ---
+        async function startDownload() {
+            const url = document.getElementById('downloadUrl').value.trim();
+            if (!url) { alert('Dán link video vào!'); return; }
+
+            const btn = document.getElementById('downloadBtn');
+            const progressDiv = document.getElementById('downloadProgress');
+            const bar = document.getElementById('downloadBar');
+            const status = document.getElementById('downloadStatus');
+
+            btn.disabled = true;
+            btn.textContent = 'Đang tải...';
+            btn.classList.add('opacity-50');
+            progressDiv.classList.remove('hidden');
+            bar.style.width = '10%';
+            status.textContent = 'Đang gửi yêu cầu...';
+
+            try {
+                const res = await fetch('/api/cutter/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                const taskId = data.task_id;
+
+                // Poll for progress
+                const pollInterval = setInterval(async () => {
+                    try {
+                        const pres = await fetch(`/api/cutter/download/${taskId}`);
+                        const pdata = await pres.json();
+
+                        status.textContent = pdata.progress || pdata.status;
+
+                        if (pdata.status === 'downloading') {
+                            // Try to parse percentage from yt-dlp output
+                            const match = pdata.progress.match(/([\d.]+)%/);
+                            if (match) {
+                                bar.style.width = match[1] + '%';
+                            } else {
+                                // Indeterminate
+                                bar.style.width = '40%';
+                            }
+                        } else if (pdata.status === 'done') {
+                            clearInterval(pollInterval);
+                            bar.style.width = '100%';
+                            bar.classList.remove('bg-jade-500');
+                            bar.classList.add('bg-jade-400');
+                            status.textContent = `✓ ${pdata.filename}`;
+                            btn.disabled = false;
+                            btn.textContent = 'Tải MP3';
+                            btn.classList.remove('opacity-50');
+                            document.getElementById('downloadUrl').value = '';
+
+                            // Refresh song list
+                            await init();
+                            // Auto-select the new file
+                            songSelect.value = pdata.filename;
+                            loadSong();
+
+                            showToast(`Đã tải xong: ${pdata.filename}`, 'success');
+                            setTimeout(() => {
+                                progressDiv.classList.add('hidden');
+                                bar.classList.add('bg-jade-500');
+                                bar.classList.remove('bg-jade-400');
+                            }, 3000);
+                        } else if (pdata.status === 'error') {
+                            clearInterval(pollInterval);
+                            bar.style.width = '100%';
+                            bar.classList.remove('bg-jade-500');
+                            bar.classList.add('bg-red-500');
+                            status.textContent = `✗ ${pdata.error}`;
+                            btn.disabled = false;
+                            btn.textContent = 'Tải MP3';
+                            btn.classList.remove('opacity-50');
+                            showToast(`Lỗi tải: ${pdata.error}`, 'error');
+                            setTimeout(() => {
+                                progressDiv.classList.add('hidden');
+                                bar.classList.add('bg-jade-500');
+                                bar.classList.remove('bg-red-500');
+                            }, 5000);
+                        }
+                    } catch (e) { /* polling error, keep trying */ }
+                }, 1500);
+            } catch (e) {
+                status.textContent = 'Lỗi mạng!';
+                btn.disabled = false;
+                btn.textContent = 'Tải MP3';
+                btn.classList.remove('opacity-50');
+                showToast('Lỗi kết nối!', 'error');
+            }
+        }
+    </script>
+
+    <!-- Toast -->
+    <div id="toast"
+        class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg border bg-slate-800 text-white text-sm font-medium min-w-[320px] max-w-[500px]">
+        <div class="flex-1">
+            <div id="toastMsg" class="mb-1">Processing...</div>
+            <div class="w-full bg-white/10 rounded h-1 overflow-hidden">
+                <div id="toastBar" class="h-1 bg-jade-400 rounded transition-all duration-300" style="width:0%">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                width: 30%;
+            }
+
+            50% {
+                opacity: 0.6;
+                width: 70%;
+            }
+        }
+    </style>
+</body>
+
+</html>

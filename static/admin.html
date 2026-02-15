@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lô Tô Hát Số - Admin</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body class="admin-page">
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Lô Tô Hát Số</h1>
+        </div>
+
+        <!-- Row 1: Input + Random -->
+        <div class="input-row">
+            <input type="number" id="numberInput" class="number-input" placeholder="00-99" min="0" max="99">
+            <button class="btn-random" onclick="randomCall()">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Row 2: Call + Skip -->
+        <div class="action-row">
+            <button class="btn-call" onclick="addToQueue()">HÔ SỐ</button>
+            <button class="btn-skip" onclick="skipCurrent()" id="btnSkip">Qua lượt</button>
+        </div>
+
+        <!-- Row 2.5: Special Actions -->
+        <div class="action-row" style="margin-top: 10px;">
+            <div class="special-action-group">
+                <select id="startSoundSelect" class="sound-select">
+                    <option value="random">Ngẫu nhiên</option>
+                </select>
+                <button class="btn-special btn-start" onclick="startGame()">BẮT ĐẦU</button>
+            </div>
+
+            <div class="special-action-group">
+                <select id="kinhSoundSelect" class="sound-select">
+                    <option value="random">Ngẫu nhiên</option>
+                </select>
+                <button class="btn-special btn-kinh" onclick="kinhGame()">KINH!</button>
+            </div>
+        </div>
+
+        <!-- Queue Visualizer -->
+        <div id="queueContainer" class="queue-container" style="display:none;">
+            <span class="queue-label">Hàng đợi:</span>
+            <div id="queueList" class="queue-list"></div>
+        </div>
+
+        <!-- Row 3: Settings -->
+        <div class="settings-row">
+            <!-- Local Mute -->
+            <button class="icon-btn" onclick="toggleLocalMute()" id="btnLocalMute" title="Tắt tiếng (Chỉ Admin)">
+                <svg id="iconUnmuted" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <svg id="iconMuted" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2" style="display:none">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                </svg>
+            </button>
+
+            <!-- Sound Icon -->
+            <button class="icon-btn" onclick="toggleVolPanel()" id="volToggle" title="Cài đặt âm thanh">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+
+            <!-- Speed Dropdown -->
+            <div class="speed-dropdown">
+                <span>Tốc độ:</span>
+                <select onchange="setPlaybackRate(this.value)">
+                    <option value="0.5">0.5x (Chậm)</option>
+                    <option value="0.75">0.75x</option>
+                    <option value="1.0" selected>1.0x (Chuẩn)</option>
+                    <option value="1.25">1.25x</option>
+                    <option value="1.5">1.5x (Nhanh)</option>
+                    <option value="2.0">2.0x (Siêu tốc)</option>
+                </select>
+            </div>
+
+            <!-- Reset Icon -->
+            <button class="icon-btn" onclick="resetGame()" title="Reset game">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Volume Panel -->
+        <div class="volume-panel" id="volumePanel">
+            <div class="volume-row">
+                <label>Nhạc nền</label>
+                <input type="range" min="0" max="100" value="80" oninput="setBgVolume(this.value)">
+                <span id="bgVolLabel" class="vol-label">80%</span>
+            </div>
+            <div class="volume-row">
+                <label>Hô số</label>
+                <input type="range" min="0" max="100" value="100" oninput="setCallVolume(this.value)">
+                <span id="callVolLabel" class="vol-label">100%</span>
+            </div>
+            <div class="volume-row" style="justify-content: space-between;">
+                <button class="icon-btn" onclick="toggleBgMusic()" id="bgMusicBtn"
+                    style="width:100%; justify-content:center; background:#eee;">🎵 Bật Nhạc Nền</button>
+            </div>
+        </div>
+
+        <div class="progress-container" id="progressContainer" style="display:none; margin: 15px 0;">
+            <div class="progress-bar-bg"
+                style="width: 100%; height: 10px; background: #ddd; border-radius: 5px; overflow: hidden;">
+                <div id="progressBar"
+                    style="width: 0%; height: 100%; background: #4caf50; transition: width 0.1s linear;"></div>
+            </div>
+            <div id="timeDisplay" style="text-align: center; font-size: 14px; margin-top: 5px; color: #555;">00:00 /
+                00:00</div>
+            <button id="btnTogglePlay" class="icon-btn" style="margin: 0 auto; display: block; margin-top: 5px;"
+                onclick="togglePlayPause()">
+                <svg id="iconPause" style="display:block" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <svg id="iconPlay" style="display:none" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </button>
+        </div>
+        <div class="status-text" id="status">Sẵn sàng</div>
+        <div class="count-text" id="calledCount"></div>
+
+        <!-- Hidden Audio -->
+        <audio id="bgAudio" loop preload="auto">
+            <source src="/data/songs/background/bg1.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="audioPlayer"></audio>
+
+        <!-- Scripts -->
+        <script type="module" src="/static/js/game-core.js"></script>
+        <script type="module" src="/static/js/admin.js"></script>
+</body>
+
+</html>

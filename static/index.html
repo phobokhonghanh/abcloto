@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lô Tô - Bảng Số</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body class="display-page">
+    <!-- Click overlay to unlock audio autoplay -->
+    <div class="audio-unlock" id="audioUnlock" onclick="unlockAudio()">
+        <div class="audio-unlock-inner">
+            <div class="icon">🔊</div>
+            <div class="text">Nhấn vào để bật âm thanh</div>
+        </div>
+    </div>
+
+    <div class="display-container">
+        <div class="title">Lô Tô Hát Số</div>
+
+        <!-- U-Shaped Layout (Uniform 10 cols x 12 rows) -->
+        <div class="game-layout">
+
+            <!-- Left Panel (00-35) -->
+            <div class="sub-board left" id="boardLeft"></div>
+
+            <!-- Current Number (Rows 1-5, Cols 4-7) -->
+            <div class="current-number-box waiting" id="currentBox">
+                <!-- Counter Moved Here -->
+                <div class="call-counter" id="callCounter">0/100</div>
+                <button class="local-mute-btn" id="btnLocalMute" title="Tắt tiếng (Chỉ máy này)"
+                    onclick="toggleLocalMute()">
+                    <span class="icon">🔊</span>
+                </button>
+                <div class="current-number" id="currentNumber">--</div>
+                <div class="current-text" id="currentText">Chờ hô số...</div>
+            </div>
+
+            <!-- Center Board (36-63) (Rows 6-12, Cols 4-7) -->
+            <div class="sub-board center" id="boardCenter"></div>
+
+            <!-- Right Panel (64-99) -->
+            <div class="sub-board right" id="boardRight"></div>
+        </div>
+    </div>
+
+    <!-- Hidden audio elements -->
+    <audio id="bgAudio" loop preload="auto">
+        <source src="/data/songs/background/bg1.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="callAudio"></audio>
+
+    <!-- Scripts -->
+    <script type="module" src="/static/js/game-core.js"></script>
+    <script type="module" src="/static/js/display.js"></script>
+</body>
+
+</html>
