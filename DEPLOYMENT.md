@@ -110,11 +110,9 @@ Nếu không chạy được do cổng 8000 đang được sử dụng bởi ứ
     uvicorn app:app --host 0.0.0.0 --port 8080
     ```
 
-### Lỗi "ModuleNotFoundError" trong Docker
-Đảm bảo bạn đã build lại image sau khi cập nhật `requirements.txt`:
-```bash
-docker build -t abcloto-app .
-```
+### Lỗi không cài được `gTTS` hoặc các thư viện khác
+*   Đảm bảo bạn đang sử dụng phiên bản **pip** mới nhất: `pip install --upgrade pip`
+*   Trên Linux, có thể cần cài thêm thư viện hệ thống cho xử lý âm thanh (tùy môi trường).
 
 ---
 *Tài liệu được cập nhật lần cuối: 2026-02-15*
