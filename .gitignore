@@ -20,18 +20,11 @@ htmlcov/
 logs/
 
 # App Specific (Data/Media)
-# Exclude raw songs to keep repo light, but keep folder structure
+# Now including audio files as requested
 static/temp/*.mp3
+!static/temp/.gitkeep
 data/songs/full/*
 !data/songs/full/.gitkeep
-data/songs/number/*
-!data/songs/number/.gitkeep
-data/songs/background/*
-!data/songs/background/.gitkeep
-data/songs/start/*
-!data/songs/start/.gitkeep
-data/songs/end/*
-!data/songs/end/.gitkeep
 
 # Project specific
 .DS_Store
